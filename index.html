@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Telma - O clássico jogo de cartas brasileiro de memória e agilidade, agora em versão digital! Desafie seus amigos e teste sua memória.">
+    <title>Telma — Jogo de Cartas Digital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SPLASH / LOADING SCREEN                     -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="splash-screen" class="screen active">
+        <div class="splash-content">
+            <div class="splash-logo">
+                <div class="logo-card card-spin"></div>
+                <div class="logo-card card-spin delay-1"></div>
+                <div class="logo-card card-spin delay-2"></div>
+            </div>
+            <h1 class="splash-title">TELMA</h1>
+            <p class="splash-subtitle">Jogo de Cartas Digital</p>
+            <div class="splash-loading">
+                <div class="loading-bar"><div class="loading-fill"></div></div>
+            </div>
+        </div>
+        <div class="floating-cards">
+            <div class="float-card fc-1">🃏</div>
+            <div class="float-card fc-2">🎴</div>
+            <div class="float-card fc-3">🃏</div>
+            <div class="float-card fc-4">🎴</div>
+            <div class="float-card fc-5">🃏</div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- MAIN MENU                                   -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="menu-screen" class="screen">
+        <div class="menu-bg-pattern"></div>
+        <div class="menu-container">
+            <div class="menu-header">
+                <h1 class="menu-title">TELMA</h1>
+                <p class="menu-tagline">Teste sua memória. Desafie seus amigos.</p>
+            </div>
+            <div class="menu-options">
+                <button id="btn-new-game" class="menu-btn primary-btn">
+                    <span class="btn-icon">🎮</span>
+                    <span class="btn-text">Novo Jogo</span>
+                </button>
+                <button id="btn-rules" class="menu-btn secondary-btn">
+                    <span class="btn-icon">📖</span>
+                    <span class="btn-text">Regras</span>
+                </button>
+            </div>
+            <div class="menu-footer">
+                <p>Um jogo de memória e agilidade</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- RULES MODAL                                 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="rules-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content rules-content">
+            <button class="modal-close" id="close-rules">&times;</button>
+            <h2>📖 Como Jogar Telma</h2>
+            <div class="rules-scroll">
+                <div class="rule-section">
+                    <h3>🎯 Objetivo</h3>
+                    <p>Seja o primeiro a se livrar de todas as suas cartas!</p>
+                </div>
+                <div class="rule-section">
+                    <h3>🏷️ Preparação</h3>
+                    <p>Cada jogador escolhe um <strong>apelido</strong> (substantivo comum, ex: "mesa", "chapéu", "fantasma"). Memorize os apelidos de todos!</p>
+                </div>
+                <div class="rule-section">
+                    <h3>🃏 Jogando</h3>
+                    <p>Os jogadores revelam cartas do topo do seu monte, uma por vez, no sentido horário. Quando dois jogadores revelarem cartas com o <strong>mesmo símbolo</strong>, acontece uma <strong>contenda</strong>!</p>
+                </div>
+                <div class="rule-section">
+                    <h3>⚔️ Contenda</h3>
+                    <p>Na contenda, ambos os jogadores devem <strong>digitar o apelido do oponente</strong> o mais rápido possível. Quem digitar primeiro e corretamente vence! O perdedor recolhe todas as cartas reveladas na mesa.</p>
+                </div>
+                <div class="rule-section">
+                    <h3>🌟 Cartas Especiais</h3>
+                    <ul>
+                        <li><strong>Carta "1, 2, 3!":</strong> Todos os jogadores revelam uma carta ao mesmo tempo.</li>
+                        <li><strong>Carta da Telma (Surto!):</strong> Todos entram em contenda! Qualquer jogador pode digitar o apelido de qualquer outro jogador.</li>
+                    </ul>
+                </div>
+                <div class="rule-section">
+                    <h3>🏆 Rodadas</h3>
+                    <ul>
+                        <li><strong>1ª Rodada:</strong> Apelidos simples (ex: "mesa")</li>
+                        <li><strong>2ª Rodada:</strong> Adicione um adjetivo (ex: "mesa azul")</li>
+                        <li><strong>3ª Rodada:</strong> Adicione uma ação (ex: "mesa azul que dança")</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- LOBBY / SETUP SCREEN                        -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="lobby-screen" class="screen">
+        <div class="lobby-container">
+            <div class="lobby-header">
+                <h2>Configurar Partida</h2>
+                <p class="lobby-round-info">Rodada <span id="round-display">1</span> de 3</p>
+            </div>
+
+            <div class="player-count-section">
+                <label>Número de Jogadores</label>
+                <div class="counter-control">
+                    <button id="btn-minus-players" class="counter-btn">−</button>
+                    <span id="player-count" class="counter-value">4</span>
+                    <button id="btn-plus-players" class="counter-btn">+</button>
+                </div>
+            </div>
+
+            <div id="player-inputs" class="player-inputs-grid">
+                <!-- Dynamically generated -->
+            </div>
+
+            <div id="round-modifier-section" class="round-modifier hidden">
+                <h3 id="round-modifier-title">Adicione um adjetivo ao seu apelido!</h3>
+                <div id="modifier-inputs" class="modifier-inputs-grid">
+                    <!-- Dynamically generated -->
+                </div>
+            </div>
+
+            <button id="btn-start-game" class="menu-btn primary-btn lobby-start">
+                <span class="btn-icon">🚀</span>
+                <span class="btn-text">Iniciar Jogo!</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- GAME SCREEN                                 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="game-screen" class="screen">
+        <div class="game-header">
+            <div class="game-info-left">
+                <span class="game-round-badge">Rodada <span id="game-round">1</span></span>
+            </div>
+            <div class="game-info-center">
+                <span id="turn-indicator" class="turn-indicator">Vez de: —</span>
+            </div>
+            <div class="game-info-right">
+                <button id="btn-scoreboard" class="icon-btn" title="Placar">🏆</button>
+            </div>
+        </div>
+
+        <div id="game-table" class="game-table">
+            <!-- Player slots generated dynamically -->
+        </div>
+
+        <div id="center-pile" class="center-pile hidden">
+            <span class="pile-count">0</span>
+            <span class="pile-label">cartas no centro</span>
+        </div>
+
+        <!-- Contenda Overlay -->
+        <div id="contenda-overlay" class="contenda-overlay hidden">
+            <div class="contenda-container">
+                <div class="contenda-header">
+                    <h2 class="contenda-title">⚔️ CONTENDA! ⚔️</h2>
+                    <p id="contenda-desc" class="contenda-desc">Dois jogadores revelaram o mesmo símbolo!</p>
+                </div>
+                <div id="contenda-players" class="contenda-players">
+                    <!-- Dynamically generated -->
+                </div>
+                <div class="contenda-timer">
+                    <div id="contenda-timer-bar" class="timer-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Surto Overlay (Carta da Telma) -->
+        <div id="surto-overlay" class="surto-overlay hidden">
+            <div class="surto-container">
+                <h2 class="surto-title">🌪️ SURTO DA TELMA! 🌪️</h2>
+                <p class="surto-desc">Todos entram em contenda! Digite o apelido de qualquer jogador!</p>
+                <div id="surto-inputs" class="surto-inputs">
+                    <!-- Dynamically generated -->
+                </div>
+                <div class="contenda-timer">
+                    <div id="surto-timer-bar" class="timer-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="game-action-bar">
+            <button id="btn-reveal-card" class="action-btn reveal-btn">
+                <span>🃏 Revelar Carta</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SCOREBOARD MODAL                            -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="scoreboard-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content scoreboard-content">
+            <button class="modal-close" id="close-scoreboard">&times;</button>
+            <h2>🏆 Placar</h2>
+            <div id="scoreboard-list" class="scoreboard-list">
+                <!-- Dynamically generated -->
+            </div>
+            <button id="btn-close-score" class="menu-btn secondary-btn" style="margin-top:1rem;">Fechar</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ROUND END / WINNER SCREEN                   -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="round-end-screen" class="screen">
+        <div class="round-end-container">
+            <div class="confetti-container" id="confetti"></div>
+            <div class="winner-card">
+                <div class="winner-emoji">🎉</div>
+                <h2 id="round-end-title">Fim da Rodada!</h2>
+                <p id="round-end-message" class="winner-message">Jogador X venceu a rodada!</p>
+                <div id="round-end-scores" class="round-scores">
+                    <!-- Dynamically generated -->
+                </div>
+                <button id="btn-next-round" class="menu-btn primary-btn">
+                    <span class="btn-icon">➡️</span>
+                    <span class="btn-text">Próxima Rodada</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- GAME OVER SCREEN                            -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="gameover-screen" class="screen">
+        <div class="gameover-container">
+            <div class="confetti-container" id="confetti-final"></div>
+            <div class="trophy-anim">🏆</div>
+            <h1 id="gameover-title" class="gameover-title">VITÓRIA!</h1>
+            <p id="gameover-message" class="gameover-message">Jogador X é o grande campeão!</p>
+            <div id="final-scores" class="round-scores"></div>
+            <button id="btn-play-again" class="menu-btn primary-btn">
+                <span class="btn-icon">🔄</span>
+                <span class="btn-text">Jogar Novamente</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Sound Effects (optional, silent if not loaded) -->
+    <audio id="sfx-flip" preload="auto"></audio>
+    <audio id="sfx-match" preload="auto"></audio>
+    <audio id="sfx-win" preload="auto"></audio>
+
+    <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Telma Online — O clássico jogo de cartas brasileiro agora multiplayer! Crie uma sala e desafie seus amigos em tempo real.">
+    <title>Telma Online — Jogo de Cartas Multiplayer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ═══════════ SPLASH ═══════════ -->
+    <div id="splash-screen" class="screen active">
+        <div class="splash-content">
+            <div class="splash-logo">
+                <div class="logo-card card-spin"></div>
+                <div class="logo-card card-spin delay-1"></div>
+                <div class="logo-card card-spin delay-2"></div>
+            </div>
+            <h1 class="splash-title">TELMA</h1>
+            <p class="splash-subtitle">Online Multiplayer</p>
+            <div class="splash-loading">
+                <div class="loading-bar"><div class="loading-fill"></div></div>
+            </div>
+        </div>
+        <div class="floating-cards">
+            <div class="float-card fc-1">🃏</div>
+            <div class="float-card fc-2">🎴</div>
+            <div class="float-card fc-3">🃏</div>
+            <div class="float-card fc-4">🎴</div>
+            <div class="float-card fc-5">🃏</div>
+        </div>
+    </div>
+
+    <!-- ═══════════ MENU ═══════════ -->
+    <div id="menu-screen" class="screen">
+        <div class="menu-bg-pattern"></div>
+        <div class="menu-container">
+            <div class="menu-header">
+                <h1 class="menu-title">TELMA</h1>
+                <div class="online-badge">🌐 ONLINE</div>
+                <p class="menu-tagline">Jogue com amigos de qualquer lugar!</p>
+            </div>
+            <div class="menu-options">
+                <button id="btn-create-room" class="menu-btn primary-btn">
+                    <span class="btn-icon">🏠</span>
+                    <span class="btn-text">Criar Sala</span>
+                </button>
+                <button id="btn-join-room" class="menu-btn accent-btn">
+                    <span class="btn-icon">🔗</span>
+                    <span class="btn-text">Entrar em Sala</span>
+                </button>
+                <button id="btn-rules" class="menu-btn secondary-btn">
+                    <span class="btn-icon">📖</span>
+                    <span class="btn-text">Regras</span>
+                </button>
+            </div>
+            <div class="menu-footer">
+                <p>Um jogo de memória e agilidade · Multiplayer em tempo real</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ CREATE ROOM MODAL ═══════════ -->
+    <div id="create-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" data-close="create-modal">&times;</button>
+            <h2>🏠 Criar Sala</h2>
+            <div class="form-group">
+                <label for="create-name">Seu nome</label>
+                <input type="text" id="create-name" placeholder="Ex: João" maxlength="20" />
+            </div>
+            <div class="form-group">
+                <label for="create-nickname">Seu apelido (substantivo)</label>
+                <input type="text" id="create-nickname" placeholder="Ex: mesa, chapéu, fantasma" maxlength="30" />
+            </div>
+            <button id="btn-do-create" class="menu-btn primary-btn" style="width:100%;margin-top:1rem;">
+                <span class="btn-icon">✨</span>
+                <span class="btn-text">Criar</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════ JOIN ROOM MODAL ═══════════ -->
+    <div id="join-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" data-close="join-modal">&times;</button>
+            <h2>🔗 Entrar em Sala</h2>
+            <div class="form-group">
+                <label for="join-code">Código da sala</label>
+                <input type="text" id="join-code" placeholder="Ex: ABCD5" maxlength="5" style="text-transform:uppercase;text-align:center;font-size:1.5rem;letter-spacing:0.3em;font-weight:800;" />
+            </div>
+            <div class="form-group">
+                <label for="join-name">Seu nome</label>
+                <input type="text" id="join-name" placeholder="Ex: Maria" maxlength="20" />
+            </div>
+            <div class="form-group">
+                <label for="join-nickname">Seu apelido (substantivo)</label>
+                <input type="text" id="join-nickname" placeholder="Ex: nuvem, sol, dragão" maxlength="30" />
+            </div>
+            <button id="btn-do-join" class="menu-btn accent-btn" style="width:100%;margin-top:1rem;">
+                <span class="btn-icon">🚀</span>
+                <span class="btn-text">Entrar</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════ RULES MODAL ═══════════ -->
+    <div id="rules-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content rules-content">
+            <button class="modal-close" data-close="rules-modal">&times;</button>
+            <h2>📖 Como Jogar Telma</h2>
+            <div class="rules-scroll">
+                <div class="rule-section"><h3>🎯 Objetivo</h3><p>Seja o primeiro a se livrar de todas as suas cartas!</p></div>
+                <div class="rule-section"><h3>🏷️ Preparação</h3><p>Cada jogador escolhe um <strong>apelido</strong> (substantivo comum, ex: "mesa", "chapéu", "fantasma"). Memorize os apelidos de todos!</p></div>
+                <div class="rule-section"><h3>🃏 Jogando</h3><p>Os jogadores revelam cartas do topo do seu monte, um por vez. Quando dois jogadores revelarem cartas com o <strong>mesmo símbolo</strong>, acontece uma <strong>contenda</strong>!</p></div>
+                <div class="rule-section"><h3>⚔️ Contenda</h3><p>Ambos os jogadores devem <strong>digitar o apelido do oponente</strong> o mais rápido possível. O primeiro a acertar vence! O perdedor recolhe todas as cartas da mesa.</p></div>
+                <div class="rule-section"><h3>🌟 Cartas Especiais</h3>
+                    <ul>
+                        <li><strong>Carta "1, 2, 3!":</strong> Todos revelam ao mesmo tempo.</li>
+                        <li><strong>Carta da Telma (Surto!):</strong> Todos entram em contenda! Qualquer jogador pode digitar o apelido de qualquer outro.</li>
+                    </ul>
+                </div>
+                <div class="rule-section"><h3>🏆 Rodadas</h3>
+                    <ul>
+                        <li><strong>1ª Rodada:</strong> Apelido simples (ex: "mesa")</li>
+                        <li><strong>2ª Rodada:</strong> + adjetivo (ex: "mesa azul")</li>
+                        <li><strong>3ª Rodada:</strong> + ação (ex: "mesa azul que dança")</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ LOBBY SCREEN ═══════════ -->
+    <div id="lobby-screen" class="screen">
+        <div class="lobby-container">
+            <div class="lobby-header">
+                <h2>Sala de Espera</h2>
+                <div class="room-code-display">
+                    <span class="code-label">Código da sala:</span>
+                    <span id="room-code" class="code-value">—</span>
+                    <button id="btn-copy-code" class="copy-btn" title="Copiar código">📋</button>
+                </div>
+                <p class="lobby-round-info" id="lobby-status">Aguardando jogadores...</p>
+            </div>
+
+            <div id="lobby-players" class="lobby-players-list">
+                <!-- Dynamic player cards -->
+            </div>
+
+            <div id="host-controls" class="host-controls">
+                <button id="btn-start-online" class="menu-btn primary-btn lobby-start" disabled>
+                    <span class="btn-icon">🚀</span>
+                    <span class="btn-text">Iniciar Jogo!</span>
+                </button>
+                <p class="host-hint">Mínimo 2 jogadores para iniciar</p>
+            </div>
+
+            <div id="guest-controls" class="guest-controls hidden">
+                <p class="waiting-text">⏳ Aguardando o host iniciar o jogo...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ GAME SCREEN ═══════════ -->
+    <div id="game-screen" class="screen">
+        <div class="game-header">
+            <div class="game-info-left">
+                <span class="game-round-badge">Rodada <span id="game-round">1</span></span>
+                <span class="room-code-mini" id="game-room-code"></span>
+            </div>
+            <div class="game-info-center">
+                <span id="turn-indicator" class="turn-indicator">Vez de: —</span>
+            </div>
+            <div class="game-info-right">
+                <button id="btn-scoreboard" class="icon-btn" title="Placar">🏆</button>
+            </div>
+        </div>
+
+        <div id="game-table" class="game-table">
+            <!-- Player slots dynamic -->
+        </div>
+
+        <div id="center-pile" class="center-pile hidden">
+            <span class="pile-count">0</span>
+            <span class="pile-label">cartas no centro</span>
+        </div>
+
+        <!-- Contenda Overlay -->
+        <div id="contenda-overlay" class="contenda-overlay hidden">
+            <div class="contenda-container">
+                <div class="contenda-header">
+                    <h2 class="contenda-title">⚔️ CONTENDA! ⚔️</h2>
+                    <p id="contenda-desc" class="contenda-desc"></p>
+                </div>
+                <div id="contenda-area" class="contenda-area">
+                    <div id="contenda-input-section" class="contenda-input-section hidden">
+                        <p class="ci-instruction" id="ci-instruction">Digite o apelido do oponente!</p>
+                        <input type="text" id="contenda-input" placeholder="Digite aqui e pressione Enter..." autocomplete="off" />
+                    </div>
+                    <div id="contenda-spectator" class="contenda-spectator hidden">
+                        <p>⏳ Aguardando os jogadores resolverem a contenda...</p>
+                    </div>
+                </div>
+                <div class="contenda-timer">
+                    <div id="contenda-timer-bar" class="timer-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Surto Overlay -->
+        <div id="surto-overlay" class="surto-overlay hidden">
+            <div class="surto-container">
+                <h2 class="surto-title">🌪️ SURTO DA TELMA! 🌪️</h2>
+                <p class="surto-desc">Todos entram em contenda! Digite o apelido de qualquer jogador!</p>
+                <div class="surto-input-section">
+                    <input type="text" id="surto-input" placeholder="Apelido de quem?" autocomplete="off" />
+                </div>
+                <div class="contenda-timer">
+                    <div id="surto-timer-bar" class="timer-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="game-action-bar">
+            <button id="btn-reveal-card" class="action-btn reveal-btn" disabled>
+                <span>🃏 Revelar Carta</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════ SCOREBOARD MODAL ═══════════ -->
+    <div id="scoreboard-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content scoreboard-content">
+            <button class="modal-close" data-close="scoreboard-modal">&times;</button>
+            <h2>🏆 Placar</h2>
+            <div id="scoreboard-list" class="scoreboard-list"></div>
+            <button class="menu-btn secondary-btn" data-close="scoreboard-modal" style="margin-top:1rem;width:100%;">Fechar</button>
+        </div>
+    </div>
+
+    <!-- ═══════════ ROUND END SCREEN ═══════════ -->
+    <div id="round-end-screen" class="screen">
+        <div class="round-end-container">
+            <div class="confetti-container" id="confetti"></div>
+            <div class="winner-card">
+                <div class="winner-emoji">🎉</div>
+                <h2 id="round-end-title">Fim da Rodada!</h2>
+                <p id="round-end-message" class="winner-message"></p>
+                <div id="round-end-scores" class="round-scores"></div>
+                <div id="modifier-section" class="modifier-section">
+                    <h3 id="modifier-title" class="modifier-prompt-title"></h3>
+                    <input type="text" id="modifier-input" placeholder="" maxlength="30" />
+                    <button id="btn-submit-modifier" class="menu-btn primary-btn" style="width:100%;margin-top:0.75rem;">
+                        <span class="btn-icon">✅</span>
+                        <span class="btn-text">Confirmar</span>
+                    </button>
+                    <p id="modifier-waiting" class="modifier-waiting hidden">⏳ Aguardando outros jogadores...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ GAME OVER SCREEN ═══════════ -->
+    <div id="gameover-screen" class="screen">
+        <div class="gameover-container">
+            <div class="confetti-container" id="confetti-final"></div>
+            <div class="trophy-anim">🏆</div>
+            <h1 id="gameover-title" class="gameover-title">VITÓRIA!</h1>
+            <p id="gameover-message" class="gameover-message"></p>
+            <div id="final-scores" class="round-scores"></div>
+            <div id="host-replay" class="hidden">
+                <button id="btn-play-again" class="menu-btn primary-btn">
+                    <span class="btn-icon">🔄</span>
+                    <span class="btn-text">Jogar Novamente</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification toast container -->
+    <div id="toast-container"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>
