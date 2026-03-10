@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   TELMA — ONLINE MULTIPLAYER SERVER
+   TELMA — ONLINE MULTIPLAYER SERVER v2
    Node.js + Express + Socket.IO
    ═══════════════════════════════════════════════════════ */
 
@@ -16,29 +16,28 @@ const io = new Server(server, {
     pingInterval: 25000,
 });
 
-// Serve static files from /public
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
 
 // ─── CARD DEFINITIONS ──────────────────────────────────
 const SYMBOLS = [
-    { emoji: '🌟', name: 'estrela' },
-    { emoji: '🔥', name: 'fogo' },
-    { emoji: '💎', name: 'diamante' },
-    { emoji: '🍀', name: 'trevo' },
-    { emoji: '🌙', name: 'lua' },
-    { emoji: '⚡', name: 'raio' },
-    { emoji: '🦋', name: 'borboleta' },
-    { emoji: '🎵', name: 'nota' },
-    { emoji: '🌸', name: 'flor' },
-    { emoji: '🐉', name: 'dragão' },
-    { emoji: '🎯', name: 'alvo' },
-    { emoji: '🔮', name: 'bola' },
+    { emoji: '\u{1F31F}', name: 'estrela' },
+    { emoji: '\u{1F525}', name: 'fogo' },
+    { emoji: '\u{1F48E}', name: 'diamante' },
+    { emoji: '\u{1F340}', name: 'trevo' },
+    { emoji: '\u{1F319}', name: 'lua' },
+    { emoji: '\u{26A1}', name: 'raio' },
+    { emoji: '\u{1F98B}', name: 'borboleta' },
+    { emoji: '\u{1F3B5}', name: 'nota' },
+    { emoji: '\u{1F338}', name: 'flor' },
+    { emoji: '\u{1F409}', name: 'dragao' },
+    { emoji: '\u{1F3AF}', name: 'alvo' },
+    { emoji: '\u{1F52E}', name: 'bola' },
 ];
 
-const SPECIAL_123 = { emoji: '1️⃣2️⃣3️⃣', name: '1,2,3!', type: '123' };
-const SPECIAL_TELMA = { emoji: '🌪️', name: 'TELMA!', type: 'telma' };
+const SPECIAL_123 = { emoji: '1\uFE0F\u20E32\uFE0F\u20E33\uFE0F\u20E3', name: '1,2,3!', type: '123' };
+const SPECIAL_TELMA = { emoji: '\u{1F32A}\uFE0F', name: 'TELMA!', type: 'telma' };
 
 const CONTENDA_TIME_MS = 15000;
 
@@ -52,7 +51,6 @@ function generateRoomCode() {
     for (let i = 0; i < 5; i++) {
         code += chars[Math.floor(Math.random() * chars.length)];
     }
-    // Ensure unique
     if (rooms.has(code)) return generateRoomCode();
     return code;
 }
@@ -86,6 +84,7 @@ function dealCards(room) {
         players[idx].pile.push(card);
         idx = (idx + 1) % players.length;
     });
+    console.log(`[DEAL] Cards dealt. ${players.map(p => p.name + ':' + p.pile.length).join(', ')}`);
 }
 
 function getPublicPlayerState(room) {
@@ -110,7 +109,7 @@ function getRoomState(room) {
         currentRound: room.currentRound,
         currentTurnIndex: room.currentTurnIndex,
         centerPile: room.centerPile,
-        phase: room.phase, // 'lobby', 'playing', 'contenda', 'surto', 'roundEnd', 'gameOver'
+        phase: room.phase,
         contendaData: room.contendaData,
         minPlayers: 2,
         maxPlayers: 8,
@@ -137,19 +136,30 @@ function checkForMatches(room) {
     return null;
 }
 
+// ─── WIN DETECTION ─────────────────────────────────────
+// A player wins when their PILE is empty (0 cards to draw from).
+// The revealed card on the table does NOT count as in-hand.
 function checkRoundEnd(room) {
-    // A player wins when they have no cards left in their pile.
-    // Their revealed card (face-up on the table) counts as "on the table, not in hand".
-    // So a player wins when pile is empty, regardless of revealedCard.
-    // The revealed card stays on the table for potential future contendas.
     const winner = room.players.find(p => p.pile.length === 0);
     if (!winner) return null;
-    // Only award points once per round
     if (!room._roundAwarded) {
         winner.score += (room.currentRound === 3 ? 2 : 1);
         room._roundAwarded = true;
+        console.log(`[WIN!] ${winner.name} won round ${room.currentRound}! Score: ${winner.score}`);
     }
     return winner;
+}
+
+// Central win check — call this EVERYWHERE after state changes
+function checkAndHandleWin(room, roomCode) {
+    if (room.phase !== 'playing') return false;
+    const winner = checkRoundEnd(room);
+    if (winner) {
+        console.log(`[ROUND END] ${winner.name} has 0 cards. Ending round.`);
+        handleRoundEnd(room, roomCode, winner);
+        return true;
+    }
+    return false;
 }
 
 function advanceTurn(room) {
@@ -157,11 +167,11 @@ function advanceTurn(room) {
     skipEliminatedPlayers(room);
 }
 
+// Skip players with empty pile
 function skipEliminatedPlayers(room) {
     let attempts = 0;
     while (
         room.players[room.currentTurnIndex].pile.length === 0 &&
-        !room.players[room.currentTurnIndex].revealedCard &&
         attempts < room.players.length
     ) {
         room.currentTurnIndex = (room.currentTurnIndex + 1) % room.players.length;
@@ -177,9 +187,8 @@ function collectRevealedCards(room) {
             p.revealedCard = null;
         }
     });
-    // Add center pile filler cards
     for (let i = 0; i < room.centerPile; i++) {
-        collected.push({ emoji: '❓', name: '?', type: 'normal' });
+        collected.push({ emoji: '?', name: '?', type: 'normal' });
     }
     room.centerPile = 0;
     return shuffleArray(collected);
@@ -195,7 +204,6 @@ function isGameOver(room) {
 setInterval(() => {
     const now = Date.now();
     for (const [code, room] of rooms.entries()) {
-        // Remove rooms inactive for more than 2 hours
         if (now - room.lastActivity > 2 * 60 * 60 * 1000) {
             rooms.delete(code);
             console.log(`[CLEANUP] Room ${code} removed (inactive)`);
@@ -235,6 +243,7 @@ io.on('connection', (socket) => {
             phase: 'lobby',
             contendaData: null,
             contendaTimeout: null,
+            _roundAwarded: false,
             lastActivity: Date.now(),
         };
 
@@ -252,20 +261,13 @@ io.on('connection', (socket) => {
         const roomCode = (code || '').toUpperCase();
         const room = rooms.get(roomCode);
 
-        if (!room) {
-            return callback({ success: false, error: 'Sala não encontrada!' });
-        }
-        if (room.phase !== 'lobby') {
-            return callback({ success: false, error: 'O jogo já começou!' });
-        }
-        if (room.players.length >= 8) {
-            return callback({ success: false, error: 'Sala cheia! (máximo 8 jogadores)' });
-        }
+        if (!room) return callback({ success: false, error: 'Sala nao encontrada!' });
+        if (room.phase !== 'lobby') return callback({ success: false, error: 'O jogo ja comecou!' });
+        if (room.players.length >= 8) return callback({ success: false, error: 'Sala cheia! (maximo 8 jogadores)' });
 
-        // Check nickname uniqueness
         const nick = (nickname || '').toLowerCase();
         if (room.players.some(p => p.nickname === nick)) {
-            return callback({ success: false, error: 'Esse apelido já está em uso!' });
+            return callback({ success: false, error: 'Esse apelido ja esta em uso!' });
         }
 
         const playerId = room.players.length;
@@ -288,19 +290,16 @@ io.on('connection', (socket) => {
 
         console.log(`[JOIN] ${playerName} joined room ${roomCode}`);
         callback({ success: true, code: roomCode, playerId, state: getRoomState(room) });
-
-        // Notify all in room
         io.to(roomCode).emit('roomUpdate', getRoomState(room));
     });
 
     // ── START GAME ─────────────────────────────────────
     socket.on('startGame', (callback) => {
         const room = rooms.get(currentRoom);
-        if (!room) return callback?.({ success: false, error: 'Sala não encontrada' });
+        if (!room) return callback?.({ success: false, error: 'Sala nao encontrada' });
         if (currentPlayerId !== room.hostId) return callback?.({ success: false, error: 'Apenas o host pode iniciar' });
-        if (room.players.length < 2) return callback?.({ success: false, error: 'Mínimo 2 jogadores' });
+        if (room.players.length < 2) return callback?.({ success: false, error: 'Minimo 2 jogadores' });
 
-        // Validate all nicknames
         const emptyNick = room.players.find(p => !p.nickname);
         if (emptyNick) return callback?.({ success: false, error: `${emptyNick.name} precisa de um apelido!` });
 
@@ -321,55 +320,71 @@ io.on('connection', (socket) => {
         const room = rooms.get(currentRoom);
         if (!room || room.phase !== 'playing') return callback?.({ success: false });
         if (currentPlayerId !== room.currentTurnIndex) {
-            return callback?.({ success: false, error: 'Não é a sua vez!' });
+            return callback?.({ success: false, error: 'Nao e a sua vez!' });
         }
 
         const player = room.players[currentPlayerId];
-        if (!player || player.pile.length === 0) {
+        if (!player) return callback?.({ success: false });
+
+        // Player has 0 cards — they have WON!
+        if (player.pile.length === 0) {
+            console.log(`[REVEAL] ${player.name} has 0 cards in pile. Triggering win!`);
+            if (checkAndHandleWin(room, currentRoom)) {
+                return callback?.({ success: true });
+            }
+            // Fallback: skip this player's turn
             advanceTurn(room);
             io.to(currentRoom).emit('roomUpdate', getRoomState(room));
             return callback?.({ success: true });
         }
 
         room.lastActivity = Date.now();
+
+        // If player already has a face-up card, it goes to center pile
+        if (player.revealedCard) {
+            room.centerPile++;
+            console.log(`[CARD] ${player.name} old revealed card -> center. Center pile: ${room.centerPile}`);
+        }
+
         const card = player.pile.shift();
         player.revealedCard = card;
+        console.log(`[REVEAL] ${player.name} reveals ${card.name} (${card.type}). Pile remaining: ${player.pile.length}`);
 
-        // Emit the card reveal to all players
-        io.to(currentRoom).emit('cardRevealed', {
+        // Emit to all clients
+        const capturedRoom = currentRoom;
+        io.to(capturedRoom).emit('cardRevealed', {
             playerIndex: currentPlayerId,
             card,
             state: getRoomState(room),
         });
 
-        // Handle special cards
+        // Special cards
         if (card.type === '123') {
-            setTimeout(() => handle123(room, currentRoom), 1200);
+            setTimeout(() => handle123(room, capturedRoom), 1200);
             return callback?.({ success: true });
         }
-
         if (card.type === 'telma') {
-            setTimeout(() => handleTelma(room, currentRoom), 1200);
+            setTimeout(() => handleTelma(room, capturedRoom), 1200);
             return callback?.({ success: true });
         }
 
-        // Check for matches
+        // Normal card: check win -> check matches -> advance turn
         setTimeout(() => {
-            if (room.phase !== 'playing') return; // guard against race
+            if (room.phase !== 'playing') return;
 
-            // First check if this player just emptied their pile (instant win)
-            const roundWinner = checkRoundEnd(room);
-            if (roundWinner) {
-                handleRoundEnd(room, currentRoom, roundWinner);
-                return;
-            }
+            // WIN: did this empty the pile?
+            if (checkAndHandleWin(room, capturedRoom)) return;
 
+            // MATCH: do any revealed cards match?
             const match = checkForMatches(room);
             if (match) {
-                startContenda(room, currentRoom, match);
+                startContenda(room, capturedRoom, match);
             } else {
                 advanceTurn(room);
-                io.to(currentRoom).emit('roomUpdate', getRoomState(room));
+                // After advancing, re-check (edge case)
+                if (!checkAndHandleWin(room, capturedRoom)) {
+                    io.to(capturedRoom).emit('roomUpdate', getRoomState(room));
+                }
             }
         }, 800);
 
@@ -389,10 +404,9 @@ io.on('connection', (socket) => {
         if (room.phase === 'contenda') {
             const contenda = room.contendaData;
             if (!contenda || !contenda.players.includes(currentPlayerId)) {
-                return callback?.({ success: false, error: 'Você não está na contenda!' });
+                return callback?.({ success: false, error: 'Voce nao esta na contenda!' });
             }
 
-            // Check if typed matches an opponent's nickname
             const opponentIndices = contenda.players.filter(i => i !== currentPlayerId);
             const matchedOpponent = opponentIndices.find(i =>
                 room.players[i].nickname.toLowerCase() === typed
@@ -406,7 +420,6 @@ io.on('connection', (socket) => {
                 io.to(socket.id).emit('contendaWrong');
             }
         } else if (room.phase === 'surto') {
-            // Any player can answer with any other player's nickname
             const matchedPlayer = room.players.find((p, i) =>
                 i !== currentPlayerId && p.nickname.toLowerCase() === typed
             );
@@ -426,27 +439,25 @@ io.on('connection', (socket) => {
         const room = rooms.get(currentRoom);
         if (!room || room.phase !== 'roundEnd') return callback?.({ success: false });
 
-        // Store the modifier for this player
         const player = room.players.find(p => p.id === currentPlayerId);
         if (player && modifier) {
             player._pendingModifier = modifier.trim().toLowerCase();
         }
 
-        // Check if all connected players have submitted modifiers
         const connectedPlayers = room.players.filter(p => p.connected);
         const allReady = connectedPlayers.every(p => p._pendingModifier);
 
         if (allReady) {
             const nextRound = room.currentRound + 1;
 
-            // Apply modifiers to nicknames based on next round
+            // Apply modifiers to nicknames
             room.players.forEach(p => {
                 if (p._pendingModifier) {
                     if (nextRound === 2) {
-                        // Round 2: base + adjective
+                        // Round 2: base nickname + adjective
                         p.nickname = `${p.baseNickname} ${p._pendingModifier}`;
                     } else if (nextRound === 3) {
-                        // Round 3: previous nickname + action
+                        // Round 3: current nickname + action
                         p.nickname = `${p.nickname} ${p._pendingModifier}`;
                     }
                     delete p._pendingModifier;
@@ -461,7 +472,7 @@ io.on('connection', (socket) => {
             room._roundAwarded = false;
             room.lastActivity = Date.now();
 
-            console.log(`[ROUND ${nextRound}] Players nicknames:`, room.players.map(p => `${p.name}: "${p.nickname}"`));
+            console.log(`[ROUND ${nextRound}] Nicknames: ${room.players.map(p => `${p.name}="${p.nickname}"`).join(', ')}`);
             io.to(currentRoom).emit('newRoundStarted', getRoomState(room));
         } else {
             io.to(currentRoom).emit('playerReady', {
@@ -487,6 +498,7 @@ io.on('connection', (socket) => {
         });
         room.currentRound = 1;
         room.phase = 'lobby';
+        room._roundAwarded = false;
         room.lastActivity = Date.now();
 
         io.to(currentRoom).emit('backToLobby', getRoomState(room));
@@ -504,9 +516,8 @@ io.on('connection', (socket) => {
         const player = room.players.find(p => p.socketId === socket.id);
         if (player) {
             player.connected = false;
-            console.log(`[PLAYER DISCONNECTED] ${player.name} from room ${currentRoom}`);
+            console.log(`[PLAYER OFFLINE] ${player.name} from room ${currentRoom}`);
 
-            // If all disconnected, schedule room deletion
             const anyConnected = room.players.some(p => p.connected);
             if (!anyConnected) {
                 setTimeout(() => {
@@ -530,10 +541,10 @@ io.on('connection', (socket) => {
     socket.on('rejoinRoom', ({ code, playerId }, callback) => {
         const roomCode = (code || '').toUpperCase();
         const room = rooms.get(roomCode);
-        if (!room) return callback?.({ success: false, error: 'Sala não encontrada' });
+        if (!room) return callback?.({ success: false, error: 'Sala nao encontrada' });
 
         const player = room.players[playerId];
-        if (!player) return callback?.({ success: false, error: 'Jogador não encontrado' });
+        if (!player) return callback?.({ success: false, error: 'Jogador nao encontrado' });
 
         player.socketId = socket.id;
         player.connected = true;
@@ -568,7 +579,6 @@ function startContenda(room, roomCode, matchResult) {
         timeMs: CONTENDA_TIME_MS,
     });
 
-    // Set timeout
     room.contendaTimeout = setTimeout(() => {
         if (room.phase === 'contenda') {
             resolveContendaTie(room, roomCode, matchResult);
@@ -586,6 +596,8 @@ function resolveContenda(room, roomCode, winnerIdx, loserIdx) {
     const collected = collectRevealedCards(room);
     loser.pile.push(...collected);
 
+    console.log(`[CONTENDA] ${winner.name} beat ${loser.name}. ${loser.name} gets ${collected.length} cards.`);
+
     io.to(roomCode).emit('contendaResolved', {
         winnerId: winnerIdx,
         loserId: loserIdx,
@@ -594,11 +606,8 @@ function resolveContenda(room, roomCode, winnerIdx, loserIdx) {
         cardsCollected: collected.length,
     });
 
-    const roundWinner = checkRoundEnd(room);
-    if (roundWinner) {
-        handleRoundEnd(room, roomCode, roundWinner);
-        return;
-    }
+    // Check if winner now has 0 cards
+    if (checkAndHandleWin(room, roomCode)) return;
 
     room.currentTurnIndex = loserIdx;
     skipEliminatedPlayers(room);
@@ -622,15 +631,13 @@ function resolveContendaTie(room, roomCode, matchResult) {
         cardIdx++;
     }
 
+    console.log(`[CONTENDA TIE] Cards split among ${playersInContenda.length} players`);
+
     io.to(roomCode).emit('contendaTied', {
-        message: 'Tempo esgotado! Empate — cartas divididas!',
+        message: 'Tempo esgotado! Empate - cartas divididas!',
     });
 
-    const roundWinner = checkRoundEnd(room);
-    if (roundWinner) {
-        handleRoundEnd(room, roomCode, roundWinner);
-        return;
-    }
+    if (checkAndHandleWin(room, roomCode)) return;
 
     room.currentTurnIndex = (playersInContenda[0] + 1) % room.players.length;
     skipEliminatedPlayers(room);
@@ -642,31 +649,30 @@ function resolveContendaTie(room, roomCode, matchResult) {
 
 // ─── SPECIAL CARDS LOGIC ───────────────────────────────
 function handle123(room, roomCode) {
-    io.to(roomCode).emit('special123', { message: 'Carta "1, 2, 3!" — Todos revelam ao mesmo tempo!' });
+    io.to(roomCode).emit('special123', { message: 'Carta "1, 2, 3!" - Todos revelam ao mesmo tempo!' });
 
     setTimeout(() => {
         room.players.forEach(p => {
             if (p.pile.length > 0) {
+                if (p.revealedCard) room.centerPile++;
                 p.revealedCard = p.pile.shift();
+                console.log(`[123] ${p.name} reveals ${p.revealedCard.name}. Pile: ${p.pile.length}`);
             }
         });
 
         io.to(roomCode).emit('allCardsRevealed', { state: getRoomState(room) });
 
         setTimeout(() => {
-            // Check win first (someone may have played their last card)
-            const roundWinner = checkRoundEnd(room);
-            if (roundWinner) {
-                handleRoundEnd(room, roomCode, roundWinner);
-                return;
-            }
+            if (checkAndHandleWin(room, roomCode)) return;
 
             const match = checkForMatches(room);
             if (match) {
                 startContenda(room, roomCode, match);
             } else {
                 advanceTurn(room);
-                io.to(roomCode).emit('roomUpdate', getRoomState(room));
+                if (!checkAndHandleWin(room, roomCode)) {
+                    io.to(roomCode).emit('roomUpdate', getRoomState(room));
+                }
             }
         }, 1200);
     }, 1500);
@@ -698,6 +704,8 @@ function resolveSurto(room, roomCode, winnerIdx, loserIdx) {
     const collected = collectRevealedCards(room);
     loser.pile.push(...collected);
 
+    console.log(`[SURTO] ${winner.name} called ${loser.nickname}. ${loser.name} gets ${collected.length} cards.`);
+
     io.to(roomCode).emit('surtoResolved', {
         winnerId: winnerIdx,
         loserId: loserIdx,
@@ -707,11 +715,7 @@ function resolveSurto(room, roomCode, winnerIdx, loserIdx) {
         cardsCollected: collected.length,
     });
 
-    const roundWinner = checkRoundEnd(room);
-    if (roundWinner) {
-        handleRoundEnd(room, roomCode, roundWinner);
-        return;
-    }
+    if (checkAndHandleWin(room, roomCode)) return;
 
     room.currentTurnIndex = loserIdx;
     skipEliminatedPlayers(room);
@@ -733,14 +737,10 @@ function resolveSurtoTimeout(room, roomCode) {
     room.centerPile += count;
 
     io.to(roomCode).emit('surtoTimeout', {
-        message: 'Ninguém conseguiu! Cartas vão para o centro.',
+        message: 'Ninguem conseguiu! Cartas vao para o centro.',
     });
 
-    const roundWinner = checkRoundEnd(room);
-    if (roundWinner) {
-        handleRoundEnd(room, roomCode, roundWinner);
-        return;
-    }
+    if (checkAndHandleWin(room, roomCode)) return;
 
     advanceTurn(room);
     setTimeout(() => {
@@ -750,8 +750,11 @@ function resolveSurtoTimeout(room, roomCode) {
 
 // ─── ROUND END ─────────────────────────────────────────
 function handleRoundEnd(room, roomCode, winner) {
+    console.log(`[HANDLE ROUND END] Winner: ${winner.name}, Round: ${room.currentRound}, isGameOver: ${isGameOver(room)}`);
+
     if (isGameOver(room)) {
         room.phase = 'gameOver';
+        console.log(`[GAME OVER] ${winner.name} wins the game!`);
         io.to(roomCode).emit('gameOver', {
             winnerId: winner.id,
             winnerName: winner.name,
@@ -759,6 +762,7 @@ function handleRoundEnd(room, roomCode, winner) {
         });
     } else {
         room.phase = 'roundEnd';
+        console.log(`[ROUND END SCREEN] Showing round end. Next round: ${room.currentRound + 1}`);
         io.to(roomCode).emit('roundEnded', {
             winnerId: winner.id,
             winnerName: winner.name,
@@ -771,7 +775,7 @@ function handleRoundEnd(room, roomCode, winner) {
 
 // ─── START SERVER ──────────────────────────────────────
 server.listen(PORT, () => {
-    console.log(`\n🃏 TELMA Online Server`);
-    console.log(`   Rodando em: http://localhost:${PORT}`);
-    console.log(`   Pronto para conexões!\n`);
+    console.log(`\n=== TELMA Online Server v2 ===`);
+    console.log(`    URL: http://localhost:${PORT}`);
+    console.log(`    Ready!\n`);
 });
