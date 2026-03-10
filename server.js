@@ -138,9 +138,17 @@ function checkForMatches(room) {
 }
 
 function checkRoundEnd(room) {
-    const winner = room.players.find(p => p.pile.length === 0 && !p.revealedCard);
+    // A player wins when they have no cards left in their pile.
+    // Their revealed card (face-up on the table) counts as "on the table, not in hand".
+    // So a player wins when pile is empty, regardless of revealedCard.
+    // The revealed card stays on the table for potential future contendas.
+    const winner = room.players.find(p => p.pile.length === 0);
     if (!winner) return null;
-    winner.score += (room.currentRound === 3 ? 2 : 1);
+    // Only award points once per round
+    if (!room._roundAwarded) {
+        winner.score += (room.currentRound === 3 ? 2 : 1);
+        room._roundAwarded = true;
+    }
     return winner;
 }
 
@@ -300,6 +308,7 @@ io.on('connection', (socket) => {
         room.phase = 'playing';
         room.currentTurnIndex = 0;
         room.centerPile = 0;
+        room._roundAwarded = false;
         room.lastActivity = Date.now();
 
         console.log(`[GAME START] Room ${currentRoom}, ${room.players.length} players`);
@@ -346,6 +355,15 @@ io.on('connection', (socket) => {
 
         // Check for matches
         setTimeout(() => {
+            if (room.phase !== 'playing') return; // guard against race
+
+            // First check if this player just emptied their pile (instant win)
+            const roundWinner = checkRoundEnd(room);
+            if (roundWinner) {
+                handleRoundEnd(room, currentRoom, roundWinner);
+                return;
+            }
+
             const match = checkForMatches(room);
             if (match) {
                 startContenda(room, currentRoom, match);
@@ -419,25 +437,31 @@ io.on('connection', (socket) => {
         const allReady = connectedPlayers.every(p => p._pendingModifier);
 
         if (allReady) {
-            // Apply modifiers
+            const nextRound = room.currentRound + 1;
+
+            // Apply modifiers to nicknames based on next round
             room.players.forEach(p => {
                 if (p._pendingModifier) {
-                    if (room.currentRound + 1 === 2) {
+                    if (nextRound === 2) {
+                        // Round 2: base + adjective
                         p.nickname = `${p.baseNickname} ${p._pendingModifier}`;
-                    } else {
+                    } else if (nextRound === 3) {
+                        // Round 3: previous nickname + action
                         p.nickname = `${p.nickname} ${p._pendingModifier}`;
                     }
                     delete p._pendingModifier;
                 }
             });
 
-            room.currentRound++;
+            room.currentRound = nextRound;
             dealCards(room);
             room.phase = 'playing';
             room.currentTurnIndex = 0;
             room.centerPile = 0;
+            room._roundAwarded = false;
             room.lastActivity = Date.now();
 
+            console.log(`[ROUND ${nextRound}] Players nicknames:`, room.players.map(p => `${p.name}: "${p.nickname}"`));
             io.to(currentRoom).emit('newRoundStarted', getRoomState(room));
         } else {
             io.to(currentRoom).emit('playerReady', {
@@ -630,6 +654,13 @@ function handle123(room, roomCode) {
         io.to(roomCode).emit('allCardsRevealed', { state: getRoomState(room) });
 
         setTimeout(() => {
+            // Check win first (someone may have played their last card)
+            const roundWinner = checkRoundEnd(room);
+            if (roundWinner) {
+                handleRoundEnd(room, roomCode, roundWinner);
+                return;
+            }
+
             const match = checkForMatches(room);
             if (match) {
                 startContenda(room, roomCode, match);
